@@ -1,12 +1,12 @@
 name: Update Funding Data
 
-# Runs every 4 hours forever, on GitHub's free scheduled-workflow minutes.
+# Runs every hour forever, on GitHub's free scheduled-workflow minutes.
 # Also runnable on demand from the Actions tab (Run workflow button) —
 # use that while you're first verifying the venue endpoints, instead of
-# waiting up to 4 hours between attempts.
+# waiting up to an hour between attempts.
 on:
   schedule:
-    - cron: '0 */4 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch: {}
 
 permissions:
