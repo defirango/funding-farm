@@ -13,32 +13,40 @@ repo, which triggers Vercel to redeploy the static site automatically.
 No third-party dependencies: stdlib only (urllib, json).
 
 ────────────────────────────────────────────────────────────────────────
-Endpoint status (verified live, 2026-08-16)
+Endpoint status (verified live, 2026-08-16 — re-verified against the
+venues' own UIs after a user report that Variational's numbers looked
+wrong and RiseX never appeared in any pair)
 ────────────────────────────────────────────────────────────────────────
-All three venues are now wired to confirmed, verified endpoints and
-venue-specific parsers — nothing here is a guess anymore:
+All three venues are wired to confirmed, verified endpoints and
+venue-specific parsers:
 
-1. Variational — GET /metadata/stats. Documented with an example response
-   in their public docs. Uses the generic auto-extractor.
+1. Variational — GET /metadata/stats. "funding_rate" is ALREADY an
+   annualized fraction, not a per-interval percent — confirmed by matching
+   it exactly against omni.variational.io/markets' own "Ann. Funding"
+   column (HYPE funding_rate="0.1095" == UI's "10.95%", exact). An earlier
+   version of this fetcher wrongly annualized it a second time using
+   funding_interval_s (1h/4h/8h depending on the market), overstating APY
+   by roughly the periods-per-year factor (~11x for 8h-cadence markets).
+   Uses a dedicated parser (see "extractor" in VENUES), not the generic
+   auto-extractor.
 
 2. RiseX — GET https://api.rise.trade/v1/markets (mainnet). The real API
    host is developer.rise.trade's documented base URL — api.risex.net
-   (an earlier guess) doesn't resolve at all. Confirmed live via the
-   "Get market configurations" reference page. Response is
-   {"data": {"markets": [...]}}; each market carries a "config" block
-   (base_asset_symbol, static config) and dynamic fields including
-   funding_rate_8h — a decimal-string fraction already normalized to an
-   8h funding period. Docs don't fully pin down whether the dynamic
-   fields sit at the top level of each market object or under "config",
-   so extract_risex_rates() below checks both. Uses a dedicated parser
-   (see "extractor" in VENUES), not the generic auto-extractor.
+   (an earlier guess) doesn't resolve at all. Response is
+   {"data": {"markets": [...]}}; funding_rate_8h is a decimal-string
+   fraction already normalized to an 8h funding period. base_asset_symbol
+   comes back live as the full pair, e.g. "BTC/USDC" — not bare "BTC" like
+   the field name implies — so extract_risex_rates() splits on "/" before
+   normalizing. Without that split, RiseX's symbols never matched
+   Variational's/Perpl's bare tickers and RiseX silently never appeared in
+   any pair (no error, just zero overlap). Uses a dedicated parser.
 
 3. Perpl — GET https://app.perpl.xyz/api/v1/pub/context. Schema confirmed
    against github.com/PerplFoundation/api-docs/types.md: the funding rate
    lives at market.funding.rate (a "Micros" value, i.e. raw / 1_000_000 =
    fraction) for a period of market.funding_interval_sec seconds — both
    nested, which is why the generic auto-extractor found 0 symbols here.
-   Uses a dedicated parser (see "extractor" in VENUES).
+   Uses a dedicated parser.
 
 If a venue changes its API shape in the future, run this FIRST:
 
@@ -78,11 +86,13 @@ VENUES = {
     "variational": {
         "label": "Variational",
         "url": "https://omni-client-api.prod.ap-northeast-1.variational.io/metadata/stats",
-        # Documented endpoint. Example in docs: "funding_rate":"0.037347"
-        # Assumption: this is a PERCENT value (0.037347 == 0.037347%), per HOUR.
-        # Verify with --test against variational.io's own UI, then fix if wrong.
-        "funding_rate_is_percent": True,
-        "funding_period_hours": 1,
+        # "funding_rate" is ALREADY an annualized fraction, not a
+        # per-interval percent — verified live against
+        # omni.variational.io/markets' own "Ann. Funding" column (e.g.
+        # HYPE funding_rate="0.1095" == UI's displayed "10.95%" exactly).
+        # extract_variational_rates() returns fully annualized APY%
+        # directly, bypassing rate_to_apy_pct().
+        "extractor": "variational",
     },
     "risex": {
         "label": "RiseX",
@@ -171,6 +181,47 @@ def rate_to_apy_pct(raw_rate: float, venue_cfg: dict) -> float:
     return fraction * periods_per_year * 100.0  # back to percent for display
 
 
+def extract_variational_rates(payload) -> dict:
+    """
+    Variational-specific parser for GET /metadata/stats.
+
+    IMPORTANT — this contradicts what the docs example implied: "funding_rate"
+    is NOT a per-interval rate that needs annualizing via funding_interval_s.
+    It is ALREADY an annualized fraction. Verified live on 2026-08-16 against
+    omni.variational.io/markets' own "Ann. Funding" column:
+        HYPE  funding_rate="0.1095"    -> UI shows "10.95%"  (0.1095 * 100, exact)
+        BTC   funding_rate="0.055503"  -> UI showed "5.5%"   (0.055503 * 100)
+        ETH   funding_rate="0.047914"  -> UI showed "4.87%"  (0.047914 * 100)
+    (BTC/ETH/SOL have small drift vs the UI screenshot since rates update
+    continuously and the two reads weren't perfectly simultaneous — HYPE's
+    exact match is the strongest signal since it's a thinner, slower-moving
+    market.) "funding_interval_s" is payment-cadence metadata only (it's
+    1h/4h/8h depending on the market) and must NOT be used in this math —
+    an earlier version of this fetcher wrongly treated funding_rate as a
+    per-hour percent needing annualization, which overstated APY by roughly
+    the periods-per-year factor (~11x for the common 8h-cadence markets).
+    """
+    if not isinstance(payload, dict):
+        return {}
+    listings = payload.get("listings")
+    if not isinstance(listings, list):
+        return {}
+    out = {}
+    for listing in listings:
+        if not isinstance(listing, dict):
+            continue
+        ticker = listing.get("ticker")
+        rate = listing.get("funding_rate")
+        if not ticker or rate is None:
+            continue
+        try:
+            apy_pct = float(rate) * 100.0
+        except (TypeError, ValueError):
+            continue
+        out[normalize_symbol(str(ticker))] = apy_pct
+    return out
+
+
 def extract_risex_rates(payload) -> dict:
     """
     RiseX-specific parser for GET /v1/markets (confirmed live via
@@ -213,6 +264,13 @@ def extract_risex_rates(payload) -> dict:
         sym_raw = field(m, "base_asset_symbol") or field(m, "display_base_asset_symbol")
         if not sym_raw:
             continue
+        # Confirmed live (2026-08-16): base_asset_symbol actually comes back
+        # as the full pair, e.g. "BTC/USDC" — not bare "BTC" like the docs'
+        # field description implied. normalize_symbol() only strips
+        # -USD/-USDT-style suffixes, not a "/QUOTE" separator, so without
+        # this split every RiseX symbol failed to match Variational's/
+        # Perpl's bare tickers and RiseX never appeared in any pair.
+        sym_raw = str(sym_raw).split("/")[0]
         rate_8h = field(m, "funding_rate_8h")
         try:
             if rate_8h is not None:
@@ -279,6 +337,7 @@ def extract_perpl_rates(payload) -> dict:
 
 
 EXTRACTORS = {
+    "variational": extract_variational_rates,
     "risex": extract_risex_rates,
     "perpl": extract_perpl_rates,
 }
