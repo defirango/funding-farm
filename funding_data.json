@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-16T08:57:57+00:00",
+  "generated_at": "2026-08-16T09:10:20+00:00",
   "venues": [
     {
       "key": "variational",
@@ -14,10 +14,168 @@
       "label": "Perpl"
     }
   ],
-  "symbols_seen": 539,
-  "history_runs": 1,
+  "symbols_seen": 570,
+  "history_runs": 2,
   "pairs": {
-    "3d": [],
-    "7d": []
+    "3d": [
+      {
+        "symbol": "ZEC",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 592.0587,
+        "realized_avg_apy_pct": 592.0587,
+        "short_rate_apy_pct": 640.9517,
+        "long_rate_apy_pct": 48.893,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      },
+      {
+        "symbol": "HYPE",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 934.7735,
+        "realized_avg_apy_pct": 934.7735,
+        "short_rate_apy_pct": 959.22,
+        "long_rate_apy_pct": 24.4465,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      },
+      {
+        "symbol": "BTC",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 208.8121,
+        "realized_avg_apy_pct": 208.8121,
+        "short_rate_apy_pct": 208.8121,
+        "long_rate_apy_pct": 0.0,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      },
+      {
+        "symbol": "SOL",
+        "short_venue": "perpl",
+        "long_venue": "variational",
+        "current_spread_apy_pct": 230.0551,
+        "realized_avg_apy_pct": 230.0551,
+        "short_rate_apy_pct": 0.0,
+        "long_rate_apy_pct": -230.0551,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      },
+      {
+        "symbol": "MON",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 934.7735,
+        "realized_avg_apy_pct": 934.7735,
+        "short_rate_apy_pct": 959.22,
+        "long_rate_apy_pct": 24.4465,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      },
+      {
+        "symbol": "ETH",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 251.6748,
+        "realized_avg_apy_pct": 251.6748,
+        "short_rate_apy_pct": 251.6748,
+        "long_rate_apy_pct": 0.0,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 3
+      }
+    ],
+    "7d": [
+      {
+        "symbol": "ZEC",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 592.0587,
+        "realized_avg_apy_pct": 592.0587,
+        "short_rate_apy_pct": 640.9517,
+        "long_rate_apy_pct": 48.893,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      },
+      {
+        "symbol": "HYPE",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 934.7735,
+        "realized_avg_apy_pct": 934.7735,
+        "short_rate_apy_pct": 959.22,
+        "long_rate_apy_pct": 24.4465,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      },
+      {
+        "symbol": "BTC",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 208.8121,
+        "realized_avg_apy_pct": 208.8121,
+        "short_rate_apy_pct": 208.8121,
+        "long_rate_apy_pct": 0.0,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      },
+      {
+        "symbol": "SOL",
+        "short_venue": "perpl",
+        "long_venue": "variational",
+        "current_spread_apy_pct": 230.0551,
+        "realized_avg_apy_pct": 230.0551,
+        "short_rate_apy_pct": 0.0,
+        "long_rate_apy_pct": -230.0551,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      },
+      {
+        "symbol": "MON",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 934.7735,
+        "realized_avg_apy_pct": 934.7735,
+        "short_rate_apy_pct": 959.22,
+        "long_rate_apy_pct": 24.4465,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      },
+      {
+        "symbol": "ETH",
+        "short_venue": "variational",
+        "long_venue": "perpl",
+        "current_spread_apy_pct": 251.6748,
+        "realized_avg_apy_pct": 251.6748,
+        "short_rate_apy_pct": 251.6748,
+        "long_rate_apy_pct": 0.0,
+        "score": 0.0,
+        "n_observations": 1,
+        "confident": false,
+        "hold_days": 7
+      }
+    ]
   }
 }
