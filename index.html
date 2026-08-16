@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funding Opportunities — Variational · RiseX · Perpl</title>
+<style>
+  :root{
+    --bg: #0a0c0f;
+    --panel: #121519;
+    --panel-border: #22262c;
+    --text: #eef1f4;
+    --text-dim: #9aa2ad;
+    --text-faint: #5c636c;
+    --accent: #7ee6b8;
+    --accent-dim: #7ee6b833;
+    --short: #f0a95c;
+    --long: #7ee6b8;
+    --track: #1c2027;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    padding: 40px 32px 80px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h1{
+    font-size: 44px;
+    margin: 0 0 14px 0;
+    letter-spacing: -0.5px;
+  }
+  .sub{
+    color: var(--text-dim);
+    max-width: 640px;
+    line-height: 1.5;
+    font-size: 15px;
+    margin-bottom: 22px;
+  }
+  .meta-row{
+    display:flex;
+    align-items:center;
+    gap: 10px;
+    color: var(--text-faint);
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    margin-bottom: 28px;
+  }
+  .meta-row .dot{ opacity:0.5; }
+  .venues-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom: 28px;
+  }
+  .venue-chip{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .venue-dot{
+    width:8px; height:8px; border-radius:50%;
+    background: var(--accent);
+  }
+  .controls{
+    display:flex;
+    gap: 28px;
+    align-items:center;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 34px;
+  }
+  .control-group label.title{
+    display:block;
+    font-size:11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+  .horizon-toggle{
+    display:flex;
+    gap:6px;
+  }
+  .horizon-btn{
+    background: transparent;
+    border: 1px solid var(--panel-border);
+    color: var(--text-dim);
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size:14px;
+    cursor:pointer;
+    transition: all .15s ease;
+  }
+  .horizon-btn.active{
+    background: #eef1f4;
+    color: #0a0c0f;
+    border-color: #eef1f4;
+    font-weight:600;
+  }
+  .refresh-btn{
+    background: transparent;
+    border:1px solid var(--panel-border);
+    color: var(--text-dim);
+    width:38px; height:38px;
+    border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .refresh-btn:hover{ color:var(--text); border-color:#3a4048; }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 20px;
+  }
+  .card{
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-top{
+    display:flex;
+    justify-content: space-between;
+    align-items:flex-start;
+    margin-bottom: 18px;
+  }
+  .rank{
+    font-size:12px;
+    color: var(--text-faint);
+    letter-spacing:1px;
+    margin-bottom: 6px;
+  }
+  .symbol{
+    font-size: 26px;
+    font-weight: 700;
+  }
+  .symbol .quote{
+    font-size:15px;
+    color: var(--text-faint);
+    font-weight:500;
+  }
+  .holds{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .holds .pip{
+    width:7px;height:7px;border-radius:50%;
+    background: var(--accent);
+  }
+  .score-ring{
+    position:relative;
+    width: 76px; height: 76px;
+  }
+  .score-ring svg{ transform: rotate(-90deg); }
+  .score-ring .num{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+  }
+  .score-ring .val{ font-size:22px; font-weight:700; line-height:1; }
+  .score-ring .lbl{ font-size:9px; color:var(--text-faint); letter-spacing:0.5px; margin-top:3px; }
+
+  .trade-box{
+    background: var(--track);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .leg{ text-align:center; flex:1; }
+  .leg .dir{
+    font-size:11px;
+    letter-spacing:1px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    margin-bottom:6px;
+  }
+  .leg.short .dir{ color: var(--short); }
+  .leg.long .dir{ color: var(--long); }
+  .leg .venue-name{ font-size:16px; font-weight:600; margin-bottom:4px; }
+  .leg .rate{ font-size:11px; color:var(--text-faint); }
+  .spread-mid{
+    flex: 1.1;
+    text-align:center;
+    padding: 0 8px;
+  }
+  .spread-mid .arrow{
+    color: var(--text-faint);
+    font-size:12px;
+    letter-spacing:2px;
+    white-space: nowrap;
+  }
+  .spread-mid .apy{
+    font-size: 20px;
+    font-weight:700;
+    color: var(--accent);
+    margin: 2px 0;
+  }
+  .spread-mid .apy-lbl{
+    font-size:10px;
+    color:var(--text-faint);
+    letter-spacing:0.5px;
+  }
+
+  .low-confidence{
+    font-size: 11px;
+    color: #d8a657;
+    background: #d8a65718;
+    border: 1px solid #d8a65740;
+    border-radius: 8px;
+    padding: 6px 10px;
+    margin-bottom: 14px;
+  }
+
+  .card-footer{
+    display:flex;
+    gap:10px;
+  }
+  .footer-btn{
+    flex:1;
+    text-align:center;
+    background: transparent;
+    border:1px solid var(--panel-border);
+    color: var(--text-dim);
+    padding: 10px;
+    border-radius: 9px;
+    font-size:12px;
+    letter-spacing: 0.5px;
+    cursor:pointer;
+    text-decoration:none;
+    display:block;
+  }
+  .footer-btn:hover{ border-color:#3a4048; color:var(--text); }
+
+  .empty-state{
+    color: var(--text-dim);
+    padding: 60px 20px;
+    text-align:center;
+    border:1px dashed var(--panel-border);
+    border-radius:16px;
+    font-size:14px;
+    line-height:1.6;
+  }
+  .empty-state code{
+    background: var(--track);
+    padding:2px 6px;
+    border-radius:5px;
+    font-size:13px;
+  }
+
+  .stale-warning{
+    display:none;
+    background: #d8a65718;
+    border:1px solid #d8a65740;
+    color:#d8a657;
+    border-radius:10px;
+    padding:12px 18px;
+    font-size:13px;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">DELTA-NEUTRAL CARRY</div>
+  <h1>Funding Opportunities</h1>
+  <div class="sub">Long one venue, short the other, collect the funding difference. Each pair is scored on how strong and persistent its funding edge is — highest scores rank first.</div>
+
+  <div class="meta-row">
+    <span id="pairCount">— pairs</span>
+    <span class="dot">·</span>
+    <span id="scoredAgo">scored —</span>
+    <span class="dot">·</span>
+    <span>auto every 4h</span>
+  </div>
+
+  <div id="staleWarning" class="stale-warning">
+    ⚠ This data hasn't refreshed in a while — the fetcher cron may not be running. Check with: <code>tail -20 fetcher.log</code> on the server.
+  </div>
+
+  <div class="venues-row" id="venuesRow"></div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label class="title">Hold Horizon</label>
+      <div class="horizon-toggle" id="horizonToggle">
+        <button class="horizon-btn" data-h="3d">3D</button>
+        <button class="horizon-btn active" data-h="7d">7D</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label class="title">&nbsp;</label>
+      <button class="refresh-btn" id="refreshBtn" title="Reload data">⟳</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid">
+    <div class="empty-state">Loading funding_data.json…</div>
+  </div>
+
+<script>
+const state = { data: null, horizon: '7d' };
+
+function timeAgo(iso) {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function scoreColor(score) {
+  if (score >= 70) return '#7ee6b8';
+  if (score >= 45) return '#d8c657';
+  return '#8a8f97';
+}
+
+function ringSvg(score) {
+  const r = 32, c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score)) / 100;
+  const dash = c * pct;
+  const color = scoreColor(score);
+  return `<svg width="76" height="76" viewBox="0 0 76 76">
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="#1c2027" stroke-width="7"/>
+    <circle cx="38" cy="38" r="${r}" fill="none" stroke="${color}" stroke-width="7"
+      stroke-dasharray="${dash} ${c}" stroke-linecap="round"/>
+  </svg>`;
+}
+
+function venueLabel(key) {
+  const v = state.data.venues.find(v => v.key === key);
+  return v ? v.label : key;
+}
+
+function renderVenues() {
+  const row = document.getElementById('venuesRow');
+  row.innerHTML = state.data.venues.map(v =>
+    `<div class="venue-chip"><span class="venue-dot"></span>${v.label}</div>`
+  ).join('');
+}
+
+function renderCards() {
+  const grid = document.getElementById('grid');
+  const pairs = (state.data.pairs && state.data.pairs[state.horizon]) || [];
+
+  if (!pairs.length) {
+    grid.innerHTML = `<div class="empty-state">
+      No pairs scored for this horizon yet.<br>
+      This is normal right after the fetcher's first few runs — the ${state.horizon.toUpperCase()} window
+      needs history to build up. Check back after the fetcher has run a few times (every 4h).
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = pairs.map((p, i) => {
+    const holdDays = p.hold_days;
+    const confWarning = !p.confident
+      ? `<div class="low-confidence">⚠ Limited history (${p.n_observations} snapshot${p.n_observations===1?'':'s'}) — this figure is still projecting from the current rate, not a fully realized average yet.</div>`
+      : '';
+    return `
+    <div class="card">
+      <div class="card-top">
+        <div>
+          <div class="rank">#${String(i+1).padStart(2,'0')}</div>
+          <div class="symbol">${p.symbol}<span class="quote">-USD</span></div>
+          <div class="holds"><span class="pip"></span>Holds ~${holdDays}.0d</div>
+        </div>
+        <div class="score-ring">
+          ${ringSvg(p.score)}
+          <div class="num">
+            <div class="val">${Math.round(p.score)}</div>
+            <div class="lbl">${state.horizon.toUpperCase()} SCORE</div>
+          </div>
+        </div>
+      </div>
+
+      ${confWarning}
+
+      <div class="trade-box">
+        <div class="leg short">
+          <div class="dir">↓ SHORT</div>
+          <div class="venue-name">${venueLabel(p.short_venue)}</div>
+          <div class="rate">${p.short_rate_apy_pct.toFixed(4)}%</div>
+        </div>
+        <div class="spread-mid">
+          <div class="arrow">--------→</div>
+          <div class="apy">${p.current_spread_apy_pct >= 0 ? '+' : ''}${p.current_spread_apy_pct.toFixed(1)}%</div>
+          <div class="apy-lbl">${state.horizon.toUpperCase()} APY</div>
+        </div>
+        <div class="leg long">
+          <div class="dir">↑ LONG</div>
+          <div class="venue-name">${venueLabel(p.long_venue)}</div>
+          <div class="rate">${p.long_rate_apy_pct.toFixed(4)}%</div>
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <span class="footer-btn">Realized avg: ${p.realized_avg_apy_pct.toFixed(2)}% APY</span>
+        <span class="footer-btn">${p.n_observations} snapshot${p.n_observations===1?'':'s'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderMeta() {
+  const pairs = (state.data.pairs && state.data.pairs[state.horizon]) || [];
+  document.getElementById('pairCount').textContent = `${pairs.length} pairs`;
+  document.getElementById('scoredAgo').textContent = `scored ${timeAgo(state.data.generated_at)}`;
+
+  const ageMins = (Date.now() - new Date(state.data.generated_at).getTime()) / 60000;
+  document.getElementById('staleWarning').style.display = ageMins > 6 * 60 ? 'block' : 'none';
+}
+
+async function loadData() {
+  try {
+    const res = await fetch('funding_data.json?_=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    state.data = await res.json();
+    renderVenues();
+    renderMeta();
+    renderCards();
+  } catch (e) {
+    document.getElementById('grid').innerHTML = `<div class="empty-state">
+      Couldn't load <code>funding_data.json</code> (${e.message}).<br>
+      Make sure fetcher.py has run at least once on the server.
+    </div>`;
+  }
+}
+
+document.getElementById('horizonToggle').addEventListener('click', (e) => {
+  const btn = e.target.closest('.horizon-btn');
+  if (!btn) return;
+  document.querySelectorAll('.horizon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.horizon = btn.dataset.h;
+  renderMeta();
+  renderCards();
+});
+
+document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+loadData();
+setInterval(loadData, 5 * 60 * 1000); // soft-refresh the view every 5 min; actual data updates every 4h
+</script>
+
+</body>
+</html>
