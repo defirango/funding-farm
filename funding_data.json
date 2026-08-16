@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-08-16T08:57:57+00:00",
+  "venues": [
+    {
+      "key": "variational",
+      "label": "Variational"
+    },
+    {
+      "key": "risex",
+      "label": "RiseX"
+    },
+    {
+      "key": "perpl",
+      "label": "Perpl"
+    }
+  ],
+  "symbols_seen": 539,
+  "history_runs": 1,
+  "pairs": {
+    "3d": [],
+    "7d": []
+  }
+}
