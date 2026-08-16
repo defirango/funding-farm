@@ -6,7 +6,7 @@ funding spreads between every pair of venues for every symbol that trades
 on 2+ of them, scores each pair, and writes funding_data.json (repo root)
 for the dashboard (index.html) to read.
 
-This runs inside a GitHub Actions workflow on a schedule (every 4h) — see
+This runs inside a GitHub Actions workflow on a schedule (every 1h) — see
 .github/workflows/update-funding.yml and README.md for setup. The workflow
 commits the updated funding_data.json / data/history.jsonl back to the
 repo, which triggers Vercel to redeploy the static site automatically.
@@ -107,7 +107,7 @@ VENUES = {
 
 TOP_N_PER_HORIZON = 20
 HORIZONS = {"3d": 3, "7d": 7}
-MIN_OBS_FOR_CONFIDENCE = 6  # ~1 day of 4h snapshots
+MIN_OBS_FOR_CONFIDENCE = 24  # ~1 day of 1h snapshots
 
 
 # ── HTTP + extraction ───────────────────────────────────────────────────
