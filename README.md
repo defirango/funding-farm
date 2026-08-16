@@ -4,7 +4,7 @@ Cross-venue funding-rate spreads for Variational, RiseX, and Perpl. No
 server, no VPS, no card on file anywhere. Two free platforms doing what
 they're each good at:
 
-- **GitHub Actions** runs `scripts/fetcher.py` every 4 hours on a schedule,
+- **GitHub Actions** runs `scripts/fetcher.py` every hour on a schedule,
   and commits the result back to this repo.
 - **Vercel** hosts `index.html` + `funding_data.json` as a static site, and
   redeploys automatically every time GitHub Actions pushes a commit.
@@ -14,10 +14,10 @@ Nothing to SSH into, nothing to renew, nothing that expires.
 ## Why not just use Vercel's own Cron Jobs?
 
 Because Vercel's free (Hobby) plan caps its own scheduled functions at once
-per day — a 4-hour schedule fails outright. GitHub Actions has no such
-limit on its schedule and is free for this volume of usage (a few seconds
-of compute, 6 times a day), so it does the scheduling and the work, and
-Vercel just serves the result.
+per day — even a 4-hour schedule fails outright, let alone hourly. GitHub
+Actions has no such limit on its schedule and is free for this volume of
+usage (a few seconds of compute, 24 times a day), so it does the scheduling
+and the work, and Vercel just serves the result.
 
 ## Repo layout
 
@@ -79,8 +79,10 @@ venue's official ranking — the weights are two numbers if you want to tune
 them.
 
 **Expect "limited history" on every card for the first several days.** The
-7D window needs ~42 runs (7 days × 6/day) before "realized avg" is a real
-average rather than a small sample projected forward.
+7D window needs ~168 runs (7 days × 24/day) before "realized avg" is a real
+average rather than a small sample projected forward. The window itself is
+still calendar-based (a true 7 days), so this doesn't fill in any faster
+than before — you just get much finer-grained data within it.
 
 ## Automating trade execution later
 

@@ -300,7 +300,7 @@
     <span class="dot">·</span>
     <span id="scoredAgo">scored —</span>
     <span class="dot">·</span>
-    <span>auto every 4h</span>
+    <span>auto every 1h</span>
   </div>
 
   <div id="staleWarning" class="stale-warning">
@@ -378,7 +378,7 @@ function renderCards() {
     grid.innerHTML = `<div class="empty-state">
       No pairs scored for this horizon yet.<br>
       This is normal right after the fetcher's first few runs — the ${state.horizon.toUpperCase()} window
-      needs history to build up. Check back after the fetcher has run a few times (every 4h).
+      needs history to build up. Check back after the fetcher has run a few times (every 1h).
     </div>`;
     return;
   }
@@ -439,7 +439,7 @@ function renderMeta() {
   document.getElementById('scoredAgo').textContent = `scored ${timeAgo(state.data.generated_at)}`;
 
   const ageMins = (Date.now() - new Date(state.data.generated_at).getTime()) / 60000;
-  document.getElementById('staleWarning').style.display = ageMins > 6 * 60 ? 'block' : 'none';
+  document.getElementById('staleWarning').style.display = ageMins > 3 * 60 ? 'block' : 'none';
 }
 
 async function loadData() {
@@ -471,7 +471,7 @@ document.getElementById('horizonToggle').addEventListener('click', (e) => {
 document.getElementById('refreshBtn').addEventListener('click', loadData);
 
 loadData();
-setInterval(loadData, 5 * 60 * 1000); // soft-refresh the view every 5 min; actual data updates every 4h
+setInterval(loadData, 5 * 60 * 1000); // soft-refresh the view every 5 min; actual data updates every 1h
 </script>
 
 </body>
