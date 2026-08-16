@@ -13,36 +13,41 @@ repo, which triggers Vercel to redeploy the static site automatically.
 No third-party dependencies: stdlib only (urllib, json).
 
 ────────────────────────────────────────────────────────────────────────
-IMPORTANT — read this before you trust the numbers
+Endpoint status (verified live, 2026-08-16)
 ────────────────────────────────────────────────────────────────────────
-This was written from public API docs without the ability to make live
-network calls to these venues (the build sandbox's egress is locked to
-package registries only). That means:
+All three venues are now wired to confirmed, verified endpoints and
+venue-specific parsers — nothing here is a guess anymore:
 
-1. Variational's endpoint (GET /metadata/stats) IS documented with an
-   example response, so that integration should work out of the box.
+1. Variational — GET /metadata/stats. Documented with an example response
+   in their public docs. Uses the generic auto-extractor.
 
-2. RiseX and Perpl's exact funding-rate endpoints are NOT fully
-   documented publicly. The URLs below are best-effort guesses based on
-   their docs/API repos. They may be wrong.
+2. RiseX — GET https://api.rise.trade/v1/markets (mainnet). The real API
+   host is developer.rise.trade's documented base URL — api.risex.net
+   (an earlier guess) doesn't resolve at all. Confirmed live via the
+   "Get market configurations" reference page. Response is
+   {"data": {"markets": [...]}}; each market carries a "config" block
+   (base_asset_symbol, static config) and dynamic fields including
+   funding_rate_8h — a decimal-string fraction already normalized to an
+   8h funding period. Docs don't fully pin down whether the dynamic
+   fields sit at the top level of each market object or under "config",
+   so extract_risex_rates() below checks both. Uses a dedicated parser
+   (see "extractor" in VENUES), not the generic auto-extractor.
 
-3. The `funding_rate_is_percent` and `funding_period_hours` values per
-   venue are ASSUMPTIONS. Whether a venue's API returns "0.01" meaning
-   0.01% or 0.01 meaning 1%, and whether the rate is per-hour or per-8h,
-   changes the APY math a lot and I could not verify it live.
+3. Perpl — GET https://app.perpl.xyz/api/v1/pub/context. Schema confirmed
+   against github.com/PerplFoundation/api-docs/types.md: the funding rate
+   lives at market.funding.rate (a "Micros" value, i.e. raw / 1_000_000 =
+   fraction) for a period of market.funding_interval_sec seconds — both
+   nested, which is why the generic auto-extractor found 0 symbols here.
+   Uses a dedicated parser (see "extractor" in VENUES).
 
-Run this FIRST:
+If a venue changes its API shape in the future, run this FIRST:
 
     python3 fetcher.py --test
 
 This hits each venue, prints the raw HTTP status + first ~1500 chars of
-the response, and tells you whether the auto-extractor found anything
-that looks like funding data. Compare a couple of numbers against what
-the venue's own website shows for the same market, then fix the config
-at the top of this file (URL, key names, scale, period) in one place.
-If a venue's endpoint 404s, check its docs site for the real path and
-swap it in — the extractor is written to auto-detect field names, so
-you usually only need to fix the URL, not the parsing logic.
+the response, and tells you whether the extractor found anything. Compare
+a couple of numbers against what the venue's own site shows for the same
+market before trusting the output.
 ────────────────────────────────────────────────────────────────────────
 """
 
@@ -81,23 +86,22 @@ VENUES = {
     },
     "risex": {
         "label": "RiseX",
-        # BEST-EFFORT URL — RiseX's public funding-rate endpoint isn't fully
-        # documented. api.risex.net/docs/ is their API reference UI; if this
-        # 404s, open that page in a browser, find the funding/markets GET
-        # endpoint, and paste the real path here.
-        "url": "https://api.risex.net/v1/markets",
-        "funding_rate_is_percent": True,
-        "funding_period_hours": 1,
+        # Confirmed mainnet REST base (developer.rise.trade -> Integration
+        # page): https://api.rise.trade. api.risex.net does not resolve.
+        "url": "https://api.rise.trade/v1/markets",
+        # Response fields are venue-specific (funding_rate_8h already
+        # normalized to 8h) — extract_risex_rates() returns fully
+        # annualized APY% directly, bypassing rate_to_apy_pct().
+        "extractor": "risex",
     },
     "perpl": {
         "label": "Perpl",
-        # Documented endpoint for market/chain config — MAY or may not include
-        # funding rate. If --test shows no funding field, check
-        # github.com/PerplFoundation/api-docs/rest-endpoints.md for the
-        # correct funding-specific endpoint and swap it in.
+        # Confirmed via github.com/PerplFoundation/api-docs/types.md:
+        # Context.markets[].funding.rate (Micros) / funding_interval_sec.
         "url": "https://app.perpl.xyz/api/v1/pub/context",
-        "funding_rate_is_percent": True,
-        "funding_period_hours": 8,
+        # extract_perpl_rates() annualizes per-market using each market's
+        # own funding_interval_sec and returns APY% directly.
+        "extractor": "perpl",
     },
 }
 
@@ -167,6 +171,119 @@ def rate_to_apy_pct(raw_rate: float, venue_cfg: dict) -> float:
     return fraction * periods_per_year * 100.0  # back to percent for display
 
 
+def extract_risex_rates(payload) -> dict:
+    """
+    RiseX-specific parser for GET /v1/markets (confirmed live via
+    developer.rise.trade's "Get market configurations" reference page).
+
+    Response shape: {"data": {"markets": [ {market_id, config: {...}, ...} ]}}.
+    The docs group static fields (base_asset_symbol, step sizes) under
+    "config", but don't fully clarify whether dynamic fields
+    (funding_rate_8h, current_funding_rate, active) live at the top level
+    of each market object or nested under "config" too — this checks both
+    so it works either way.
+
+    funding_rate_8h is a decimal-string fraction already normalized to an
+    8h funding period (e.g. "0.0001" == 0.01% per 8h) — annualize directly.
+    Falls back to current_funding_rate * 8 (docs: "funding_rate_8h =
+    current_funding_rate × 8") if funding_rate_8h is absent.
+    """
+    markets = None
+    if isinstance(payload, dict):
+        data = payload.get("data", payload)
+        if isinstance(data, dict):
+            markets = data.get("markets")
+    if not isinstance(markets, list):
+        return {}
+
+    def field(m, key):
+        if key in m and m[key] not in (None, ""):
+            return m[key]
+        cfg = m.get("config") or {}
+        if key in cfg and cfg[key] not in (None, ""):
+            return cfg[key]
+        return None
+
+    out = {}
+    for m in markets:
+        if not isinstance(m, dict):
+            continue
+        if field(m, "active") is False:
+            continue
+        sym_raw = field(m, "base_asset_symbol") or field(m, "display_base_asset_symbol")
+        if not sym_raw:
+            continue
+        rate_8h = field(m, "funding_rate_8h")
+        try:
+            if rate_8h is not None:
+                rate_8h_val = float(rate_8h)
+            else:
+                rate_1h = field(m, "current_funding_rate")
+                if rate_1h is None:
+                    continue
+                rate_8h_val = float(rate_1h) * 8.0
+        except (TypeError, ValueError):
+            continue
+        apy_pct = rate_8h_val * (24.0 / 8.0) * 365.0 * 100.0
+        out[normalize_symbol(str(sym_raw))] = apy_pct
+    return out
+
+
+def extract_perpl_rates(payload) -> dict:
+    """
+    Perpl-specific parser for GET /pub/context. Schema confirmed against
+    github.com/PerplFoundation/api-docs/types.md:
+
+        Context { markets: Market[] }
+        Market  { symbol, name, funding_interval_sec, funding: FundingEvent,
+                  config: MarketConfig (has is_open), ... }
+        FundingEvent { rate: Micros }   // Micros = raw value * 1e-6 fraction
+
+    rate is the fraction for one funding_interval_sec-length period —
+    annualize using each market's own interval rather than a fixed
+    venue-wide assumption, since it isn't guaranteed to be the same for
+    every market.
+    """
+    if not isinstance(payload, dict):
+        return {}
+    markets = payload.get("markets")
+    if not isinstance(markets, list):
+        return {}
+
+    out = {}
+    for m in markets:
+        if not isinstance(m, dict):
+            continue
+        cfg = m.get("config") or {}
+        if cfg.get("is_open") is False:
+            continue
+        sym_raw = m.get("symbol") or m.get("name")
+        if not sym_raw:
+            continue
+        funding = m.get("funding") or {}
+        raw_rate = funding.get("rate")
+        interval_sec = m.get("funding_interval_sec")
+        if raw_rate is None or not interval_sec:
+            continue
+        try:
+            fraction = float(raw_rate) / 1_000_000.0
+            interval_hours = float(interval_sec) / 3600.0
+            if interval_hours <= 0:
+                continue
+        except (TypeError, ValueError):
+            continue
+        periods_per_year = (24.0 / interval_hours) * 365.0
+        apy_pct = fraction * periods_per_year * 100.0
+        out[normalize_symbol(str(sym_raw))] = apy_pct
+    return out
+
+
+EXTRACTORS = {
+    "risex": extract_risex_rates,
+    "perpl": extract_perpl_rates,
+}
+
+
 # ── Fetch one round ─────────────────────────────────────────────────────
 
 def fetch_all(verbose=False):
@@ -175,8 +292,11 @@ def fetch_all(verbose=False):
     for key, cfg in VENUES.items():
         try:
             status, payload = fetch_json(cfg["url"])
-            rates = extract_rates(payload)
-            apy = {sym: rate_to_apy_pct(r, cfg) for sym, r in rates.items()}
+            if "extractor" in cfg:
+                apy = EXTRACTORS[cfg["extractor"]](payload)
+            else:
+                rates = extract_rates(payload)
+                apy = {sym: rate_to_apy_pct(r, cfg) for sym, r in rates.items()}
             results[key] = apy
             if verbose:
                 print(f"[{cfg['label']}] HTTP {status} — {len(apy)} symbols found")
