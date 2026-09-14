@@ -1,0 +1,24 @@
+{
+  "PUMP|risex>perpl": {
+    "pair_id": "PUMP|risex>perpl",
+    "symbol": "PUMP",
+    "short_venue": "risex",
+    "long_venue": "perpl",
+    "notional_usd": 200.0,
+    "horizon": "7d",
+    "opened_at": "2026-09-14T21:34:28+00:00",
+    "short_order_ref": "",
+    "long_order_ref": ""
+  },
+  "LIT|risex>perpl": {
+    "pair_id": "LIT|risex>perpl",
+    "symbol": "LIT",
+    "short_venue": "risex",
+    "long_venue": "perpl",
+    "notional_usd": 200.0,
+    "horizon": "7d",
+    "opened_at": "2026-09-14T21:34:28+00:00",
+    "short_order_ref": "",
+    "long_order_ref": ""
+  }
+}

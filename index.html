@@ -17,6 +17,8 @@
     --short: #f0a95c;
     --long: #7ee6b8;
     --track: #1c2027;
+    --warn: #d8a657;
+    --neg: #e77b7b;
   }
   * { box-sizing: border-box; }
   body{
@@ -287,6 +289,95 @@
     font-size:13px;
     margin-bottom: 24px;
   }
+
+  .bot-section{
+    background: var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 34px;
+  }
+  .bot-header{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .bot-title{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+  }
+  .bot-title h2{
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .sim-badge{
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    font-weight:700;
+    color: var(--warn);
+    background:#d8a65718;
+    border:1px solid #d8a65740;
+    border-radius: 7px;
+    padding: 4px 10px;
+    white-space: nowrap;
+  }
+  .bot-updated{ color:var(--text-faint); font-size:12px; }
+  .bot-stats{
+    display:flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .bot-stat .num{ font-size: 20px; font-weight: 700; }
+  .bot-stat .num.pos{ color: var(--accent); }
+  .bot-stat .num.neg{ color: var(--neg); }
+  .bot-stat .lbl{
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+  }
+  .bot-columns{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+  }
+  @media (max-width: 780px){
+    .bot-columns{ grid-template-columns: 1fr; }
+  }
+  .bot-col-title{
+    font-size:11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+  .bot-row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--panel-border);
+    font-size: 13px;
+  }
+  .bot-row:last-child{ border-bottom:none; }
+  .bot-row .who{ font-weight:600; }
+  .bot-row .venues{ color: var(--text-faint); font-size:12px; margin-top:2px; }
+  .bot-row .pnl{ white-space:nowrap; }
+  .bot-row .pnl.pos{ color: var(--accent); font-weight:600; }
+  .bot-row .pnl.neg{ color: var(--neg); font-weight:600; }
+  .bot-empty{
+    color: var(--text-faint);
+    font-size: 13px;
+    padding: 8px 0;
+  }
 </style>
 </head>
 <body>
@@ -323,12 +414,23 @@
     </div>
   </div>
 
+  <div class="bot-section" id="botSection">
+    <div class="bot-header">
+      <div class="bot-title">
+        <h2>Bot Activity</h2>
+        <span class="sim-badge">SIMULATED · NO REAL FUNDS</span>
+      </div>
+      <span class="bot-updated" id="botUpdatedAgo"></span>
+    </div>
+    <div id="botBody">Loading bot_status.json…</div>
+  </div>
+
   <div class="grid" id="grid">
     <div class="empty-state">Loading funding_data.json…</div>
   </div>
 
 <script>
-const state = { data: null, horizon: '7d' };
+const state = { data: null, bot: null, horizon: '7d' };
 
 function timeAgo(iso) {
   const diffMs = Date.now() - new Date(iso).getTime();
@@ -359,9 +461,12 @@ function ringSvg(score) {
 }
 
 function venueLabel(key) {
-  const v = state.data.venues.find(v => v.key === key);
+  const v = state.data && state.data.venues.find(v => v.key === key);
   return v ? v.label : key;
 }
+
+function pnlClass(n) { return n > 0 ? 'pos' : (n < 0 ? 'neg' : ''); }
+function fmtUsd(n) { return `${n >= 0 ? '+' : ''}$${n.toFixed(2)}`; }
 
 function renderVenues() {
   const row = document.getElementById('venuesRow');
@@ -442,6 +547,86 @@ function renderMeta() {
   document.getElementById('staleWarning').style.display = ageMins > 3 * 60 ? 'block' : 'none';
 }
 
+function renderBot() {
+  const body = document.getElementById('botBody');
+  const updatedAgo = document.getElementById('botUpdatedAgo');
+  const bot = state.bot;
+
+  if (!bot) {
+    updatedAgo.textContent = '';
+    body.innerHTML = `<div class="bot-empty">
+      Bot hasn't run yet — <code>execution/paper_bot.py</code> runs hourly via
+      <code>.github/workflows/paper-bot.yml</code> once that's on the default branch.
+      Trigger it once from the Actions tab to see it here immediately.
+    </div>`;
+    return;
+  }
+
+  updatedAgo.textContent = `updated ${timeAgo(bot.generated_at)}`;
+  const openTotal = bot.open_positions.reduce((s, p) => s + p.notional_usd, 0);
+
+  const statsHtml = `
+    <div class="bot-stats">
+      <div class="bot-stat">
+        <div class="num ${pnlClass(bot.cumulative_realized_pnl_usd)}">${fmtUsd(bot.cumulative_realized_pnl_usd)}</div>
+        <div class="lbl">REALIZED P&amp;L (EST.)</div>
+      </div>
+      <div class="bot-stat">
+        <div class="num">${bot.open_positions.length}/${bot.max_concurrent_pairs}</div>
+        <div class="lbl">OPEN POSITIONS</div>
+      </div>
+      <div class="bot-stat">
+        <div class="num">$${openTotal.toFixed(0)}</div>
+        <div class="lbl">DEPLOYED / $${bot.capital_usd.toFixed(0)}</div>
+      </div>
+      <div class="bot-stat">
+        <div class="num">${bot.total_closed_trades}</div>
+        <div class="lbl">CLOSED TRADES</div>
+      </div>
+    </div>`;
+
+  const openHtml = bot.open_positions.length ? bot.open_positions.map(p => `
+    <div class="bot-row">
+      <div>
+        <div class="who">${p.symbol}</div>
+        <div class="venues">short ${venueLabel(p.short_venue)} / long ${venueLabel(p.long_venue)} · $${p.notional_usd.toFixed(0)} · ${p.hold_hours}h</div>
+      </div>
+      <div class="pnl ${pnlClass(p.unrealized_pnl_usd_est)}">${fmtUsd(p.unrealized_pnl_usd_est)}</div>
+    </div>`).join('') : `<div class="bot-empty">Nothing open right now.</div>`;
+
+  const eventsHtml = bot.recent_events.length ? bot.recent_events.map(e => `
+    <div class="bot-row">
+      <div>
+        <div class="who">${e.action === 'open' ? '↗ Opened' : '↘ Closed'} ${e.symbol}</div>
+        <div class="venues">short ${venueLabel(e.short_venue)} / long ${venueLabel(e.long_venue)} · $${e.notional_usd.toFixed(0)} · ${timeAgo(e.at)}</div>
+      </div>
+      ${e.action === 'close' ? `<div class="pnl ${pnlClass(e.simulated_pnl_usd)}">${fmtUsd(e.simulated_pnl_usd)}</div>` : ''}
+    </div>`).join('') : `<div class="bot-empty">No activity yet.</div>`;
+
+  body.innerHTML = `
+    ${statsHtml}
+    <div class="bot-columns">
+      <div>
+        <div class="bot-col-title">Open Positions</div>
+        ${openHtml}
+      </div>
+      <div>
+        <div class="bot-col-title">Recent Activity</div>
+        ${eventsHtml}
+      </div>
+    </div>`;
+}
+
+async function loadBotStatus() {
+  try {
+    const res = await fetch('bot_status.json?_=' + Date.now());
+    state.bot = res.ok ? await res.json() : null;
+  } catch (e) {
+    state.bot = null;
+  }
+  renderBot();
+}
+
 async function loadData() {
   try {
     const res = await fetch('funding_data.json?_=' + Date.now());
@@ -468,10 +653,11 @@ document.getElementById('horizonToggle').addEventListener('click', (e) => {
   renderCards();
 });
 
-document.getElementById('refreshBtn').addEventListener('click', loadData);
+document.getElementById('refreshBtn').addEventListener('click', () => { loadData(); loadBotStatus(); });
 
-loadData();
+loadData().then(loadBotStatus);
 setInterval(loadData, 5 * 60 * 1000); // soft-refresh the view every 5 min; actual data updates every 1h
+setInterval(loadBotStatus, 5 * 60 * 1000);
 </script>
 
 </body>
