@@ -1,0 +1,55 @@
+{
+  "mode": "paper",
+  "generated_at": "2026-09-14T21:34:28+00:00",
+  "funding_data_fresh": true,
+  "capital_usd": 1000.0,
+  "max_concurrent_pairs": 2,
+  "open_positions": [
+    {
+      "symbol": "PUMP",
+      "short_venue": "risex",
+      "long_venue": "perpl",
+      "notional_usd": 200.0,
+      "opened_at": "2026-09-14T21:34:28+00:00",
+      "hold_hours": 0.0,
+      "unrealized_pnl_usd_est": 0.0,
+      "n_observations": 0
+    },
+    {
+      "symbol": "LIT",
+      "short_venue": "risex",
+      "long_venue": "perpl",
+      "notional_usd": 200.0,
+      "opened_at": "2026-09-14T21:34:28+00:00",
+      "hold_hours": 0.0,
+      "unrealized_pnl_usd_est": 0.0,
+      "n_observations": 0
+    }
+  ],
+  "cumulative_realized_pnl_usd": 0,
+  "total_closed_trades": 0,
+  "recent_events": [
+    {
+      "action": "open",
+      "at": "2026-09-14T21:34:28+00:00",
+      "pair_id": "LIT|risex>perpl",
+      "symbol": "LIT",
+      "short_venue": "risex",
+      "long_venue": "perpl",
+      "notional_usd": 200.0,
+      "score": 94.4,
+      "entry_spread_apy_pct": 67.384
+    },
+    {
+      "action": "open",
+      "at": "2026-09-14T21:34:28+00:00",
+      "pair_id": "PUMP|risex>perpl",
+      "symbol": "PUMP",
+      "short_venue": "risex",
+      "long_venue": "perpl",
+      "notional_usd": 200.0,
+      "score": 97.5,
+      "entry_spread_apy_pct": 25.1195
+    }
+  ]
+}
